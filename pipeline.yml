@@ -70,18 +70,16 @@ jobs:
         params: {claim: third}
   - name: find-all-things
     plan:
-      - get: first
-        resource: pool
-        passed: [change-first-thing]
-      - get: second
-        resource: pool
-        #- get: third
-        #  resource: pool
-        #  passed: [change-third-thing]
+      - get: pool
+        passed:
+          - change-first-thing
+          - change-third-thing
       - task: show-all-things
         <<: *show-all-things
-      - put: first
-        resource: pool
-        params: {release: first}
+      - put: pool
+        params:
+          name: first
+          release: true
       - task: show-all-things
         <<: *show-all-things
+
