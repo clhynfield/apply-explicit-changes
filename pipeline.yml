@@ -1,0 +1,87 @@
+---
+resources:
+  - name: pool
+    type: pool
+    source:
+      uri: git@github.com:clhynfield/apply-explicit-changes.git
+      branch: pool
+      pool: things
+      private_key: ((github_private_key))
+      retry_delay: 1s
+
+show-all-things: &show-all-things
+  config:
+    platform: linux
+    inputs:
+      - name: pool
+        optional: true
+      - name: first
+        optional: true
+      - name: second
+        optional: true
+      - name: third
+        optional: true
+      - name: things
+        optional: true
+    image_resource:
+      type: docker-image
+      source: {repository: busybox}
+    run:
+      path: ls
+      args:
+        - "-lR"
+
+show-claimed-things: &show-claimed-things
+  config:
+    platform: linux
+    inputs:
+      - name: pool
+    image_resource:
+      type: docker-image
+      source: {repository: busybox}
+    run:
+      path: ls
+      args:
+        - pool/things/claimed
+
+show-unclaimed-things: &show-unclaimed-things
+  config:
+    platform: linux
+    inputs:
+      - name: pool
+    image_resource:
+      type: docker-image
+      source: {repository: busybox}
+    run:
+      path: ls
+      args:
+        - pool/things/unclaimed
+
+jobs:
+  - name: change-first-thing
+    plan:
+      - put: pool
+        params: {claim: first}
+  - name: change-third-thing
+    plan:
+      - get: pool
+        passed: [change-first-thing]
+      - put: pool
+        params: {claim: third}
+  - name: find-all-things
+    plan:
+      - get: first
+        resource: pool
+        passed: [change-first-thing]
+      - get: second
+        resource: pool
+        #- get: third
+        #  resource: pool
+        #  passed: [change-third-thing]
+      - task: show-all-things
+        <<: *show-all-things
+      - put: first
+        resource: pool
+        params: {release: first}
+      - task: show-all-things
+        <<: *show-all-things
