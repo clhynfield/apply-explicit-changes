@@ -79,7 +79,7 @@ jobs:
       - put: pool
         params:
           name: first
-          release: true
+          release: first
       - task: show-all-things
         <<: *show-all-things
 
